@@ -20,8 +20,8 @@ export const Sidebar = () => {
 
     return (
         <aside className="w-64 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 p-4 flex flex-col gap-4 z-10">
-            <div className="font-bold text-lg dark:text-zinc-100">Node Palette</div>
-            <div className="text-xs text-zinc-500 mb-2">Drag nodes to the canvas</div>
+            <div className="font-bold text-lg dark:text-zinc-100">Nodes Pallete</div>
+            <div className="text-s text-zinc-500 mb-2">Drag nodes to the canvas</div>
             <div className="flex flex-col gap-2">
                 {Object.entries(nodeTypes).map(([type, label]) => (
                     <div

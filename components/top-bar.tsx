@@ -22,7 +22,7 @@ export const TopBar = () => {
     };
 
     return (
-        <div className="absolute top-4 left-4 z-50 flex gap-2">
+        <div className="absolute bottom-10 left-8 z-50 flex gap-2">
             <button
                 onClick={handleRun}
                 className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded shadow-lg transition-colors font-semibold"

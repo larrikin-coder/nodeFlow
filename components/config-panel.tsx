@@ -5,7 +5,7 @@ import { useStore } from '@/lib/store';
 import { X } from 'lucide-react';
 
 export const ConfigPanel = () => {
-    const { nodes, updateNodeData } = useStore();
+    const { nodes, updateNodeData, deleteNode } = useStore();
     const [selectedNode, setSelectedNode] = useState<any>(null);
 
     useEffect(() => {
@@ -206,6 +206,18 @@ export const ConfigPanel = () => {
                         />
                     </div>
                 )}
+            </div>
+
+            <div className="mt-8 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                <button
+                    onClick={() => {
+                        deleteNode(selectedNode.id);
+                        setSelectedNode(null);
+                    }}
+                    className="w-full flex justify-center items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/30 dark:hover:bg-red-900/50 dark:text-red-400 rounded transition-colors text-sm font-semibold"
+                >
+                    Delete Node
+                </button>
             </div>
         </aside>
     );

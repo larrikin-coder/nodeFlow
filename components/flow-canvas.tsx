@@ -33,6 +33,8 @@ import {
     EndNode,
 } from '@/components/nodes';
 import { BaseNode } from './nodes/base-node';
+import { FloatingNav } from './aceternity/navbar';
+import { FloatingNavDemo } from './nav-bar';
 
 const nodeTypes = {
     manualTrigger: ManualTriggerNode,
@@ -149,6 +151,9 @@ const FlowCanvasInternal = () => {
                             <Background gap={12} size={1} />
                         </ReactFlow>
                     </GridBackground>
+                </div>
+                <div className="absolute justify-center z-50">
+                    <FloatingNavDemo />
                 </div>
             </div>
         </div>
