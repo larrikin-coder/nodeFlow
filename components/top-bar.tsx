@@ -12,6 +12,12 @@ export const TopBar = () => {
         console.log('Running workflow:', { nodes, edges });
         alert('Workflow execution triggered! Check console for payload.');
         // In real app, this would POST to backend
+        const response = await fetch('/api/workflows/run', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nodes, edges })
+        });
+        console.log('Response from backend:', response);
     };
 
     const handleSave = () => {

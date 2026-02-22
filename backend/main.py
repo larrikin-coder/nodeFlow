@@ -7,7 +7,7 @@ import uuid
 
 app = FastAPI()
 
-# Allow frontend to communicate
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -16,7 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize Temporal Client connection on startup
+
 temporal_client = None
 
 @app.on_event("startup")
@@ -26,6 +26,7 @@ async def startup_event():
 
 @app.post("/api/workflows/run")
 async def run_workflow(request: RunWorkflowRequest):
+    # console.log("Received workflow run request:", request)
     workflow_id = f"workflow-{uuid.uuid4()}"
     
     try:
