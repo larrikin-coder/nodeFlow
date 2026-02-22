@@ -34,6 +34,8 @@ class DAGWorkflow:
             elif node_type == "wait":
                 duration = int(config.get("duration",0))
                 await asyncio.sleep(duration) 
+            elif node_type == "end":
+                return current_payload
             else:
                 edge = next((edge for edge in edges if edge["source"] == current_node["id"]),None)
                 if not edge:
