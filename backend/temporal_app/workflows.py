@@ -4,7 +4,7 @@ from typing import Dict, Any
 from datetime import timedelta
 
 
-with workflow.unsafe.imports_passed():
+with workflow.unsafe.imports_passed_through():
     from .activities import execute_http_request, transform_data, evaluate_decision 
     
 @workflow.defn
