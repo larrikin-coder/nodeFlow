@@ -1,8 +1,8 @@
 import asyncio
 from temporalio.client import Client
 from temporalio.worker import Worker
-from activities import execute_http_request, transform_data, evaluate_decision
-from workflows import DAGWorkflow
+from .activities import execute_http_request, transform_data, evaluate_decision
+from .workflows import DAGWorkflow
 
 
 async def main():

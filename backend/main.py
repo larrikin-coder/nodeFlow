@@ -32,11 +32,13 @@ async def run_workflow(request: RunWorkflowRequest):
     try:
         handle = await temporal_client.start_workflow(
             DAGWorkflow.run,
-            request.workflow.dict(), request.initial_payload,
+            {"workflow": request.workflow, "initial_payload": request.initial_payload},
             id=workflow_id,
-            task_queue="workflow-engine-queue",
+            task_queue="dag-workflow-queue",
         )
         return {"message": "Workflow started", "run_id": handle.id}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 

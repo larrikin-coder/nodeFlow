@@ -17,5 +17,5 @@ class WorkflowPayload(BaseModel):
     edges: List[EdgeState]
 
 class RunWorkflowRequest(BaseModel):
-    workflow: WorkflowPayload
-    initial_payload: Dict[str, Any]
+    workflow: dict
+    initial_payload: dict
