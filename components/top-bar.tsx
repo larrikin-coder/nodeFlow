@@ -20,7 +20,7 @@ export const TopBar = () => {
                 initial_payload: {}
             })
         });
-        console.log('Response from backend:', response);
+        console.log('Response from backend:', await response.json());
     };
 
     const handleSave = () => {

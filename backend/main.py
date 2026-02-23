@@ -42,3 +42,14 @@ async def run_workflow(request: RunWorkflowRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/workflows/status/{run_id}")
+async def get_workflow_status(run_id: str):
+    if not temporal_client:
+        raise HTTPException(status_code=500, detail="Temporal client not connected.")
+    try:
+        handle = temporal_client.get_workflow_handle(run_id)
+        description = await handle.describe()
+        return {"status": description.status.name}
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Workflow not found: {e}")
+

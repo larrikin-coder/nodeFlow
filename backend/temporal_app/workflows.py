@@ -27,22 +27,23 @@ class DAGWorkflow:
             node_type = current_node["type"]
             config = current_node.get("data", {})
 
-            # HTTP
             if node_type == "httpRequest":
                 current_payload = await workflow.execute_activity(
                     execute_http_request,
-                    config["url"],
-                    config["method"],
-                    config.get("headers", {}),
-                    current_payload,
+                    args=[
+                        config.get("url", ""),
+                        config.get("method", "GET"),
+                        config.get("headers", {}),
+                        current_payload
+                    ],
                     start_to_close_timeout=timedelta(seconds=10),
                 )
 
             # Transform
-            elif node_type == "dataTransformation":
+            elif node_type == "dataTransformation" or node_type == "transformData":
                 current_payload = await workflow.execute_activity(
                     transform_data,
-                    current_payload,
+                    args=[current_payload, config],
                     start_to_close_timeout=timedelta(seconds=10),
                 )
 
@@ -50,8 +51,7 @@ class DAGWorkflow:
             elif node_type == "decision":
                 is_true = await workflow.execute_activity(
                     evaluate_decision,
-                    current_payload,
-                    config,
+                    args=[current_payload, config],
                     start_to_close_timeout=timedelta(seconds=10),
                 )
 
