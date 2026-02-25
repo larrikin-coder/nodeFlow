@@ -7,7 +7,6 @@ import uuid
 
 app = FastAPI()
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -16,40 +15,48 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+temporal_client: Client | None = None
 
-temporal_client = None
 
 @app.on_event("startup")
 async def startup_event():
     global temporal_client
     temporal_client = await Client.connect("localhost:7233")
 
+
 @app.post("/api/workflows/run")
 async def run_workflow(request: RunWorkflowRequest):
-    # console.log("Received workflow run request:", request)
+    if not temporal_client:
+        raise HTTPException(status_code=500, detail="Temporal client not connected.")
+
     workflow_id = f"workflow-{uuid.uuid4()}"
-    
+
     try:
-        handle = await temporal_client.start_workflow(
+        # execute_workflow starts the workflow AND waits for the result
+        result = await temporal_client.execute_workflow(
             DAGWorkflow.run,
             {"workflow": request.workflow, "initial_payload": request.initial_payload},
             id=workflow_id,
             task_queue="dag-workflow-queue",
         )
-        return {"message": "Workflow started", "run_id": handle.id}
+        return {"workflow_id": workflow_id, "result": result}
+
     except Exception as e:
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/workflows/status/{run_id}")
-async def get_workflow_status(run_id: str):
+
+@app.get("/api/workflows/status/{workflow_id}")
+async def get_workflow_status(workflow_id: str):
     if not temporal_client:
         raise HTTPException(status_code=500, detail="Temporal client not connected.")
     try:
-        handle = temporal_client.get_workflow_handle(run_id)
+        handle = temporal_client.get_workflow_handle(workflow_id)
         description = await handle.describe()
-        return {"status": description.status.name}
+        return {
+            "workflow_id": workflow_id,
+            "status": description.status.name,
+        }
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Workflow not found: {e}")
-

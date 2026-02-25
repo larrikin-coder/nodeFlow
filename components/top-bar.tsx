@@ -1,11 +1,12 @@
 "use client";
 
-import React from 'react';
-import { Play, Save } from 'lucide-react';
+import React, { useState } from 'react';
+import { Play, Save, Loader2 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 
 export const TopBar = () => {
     const { nodes, edges } = useStore();
+    const [isRunning, setIsRunning] = useState(false);
 
     const handleRun = async () => {
         const triggerNode = nodes.find((n) => n.type === 'manualTrigger');
@@ -17,6 +18,7 @@ export const TopBar = () => {
         };
 
         console.log('Running workflow:', body);
+        setIsRunning(true);
 
         try {
             const response = await fetch('http://localhost:8000/api/workflows/run', {
@@ -25,12 +27,17 @@ export const TopBar = () => {
                 body: JSON.stringify(body),
             });
 
-            const result = await response.json();
-            console.log('Response from backend:', result);
-            alert(`Workflow triggered!\nResult: ${JSON.stringify(result, null, 2)}`);
+            const json = await response.json();
+            console.log('Response from backend:', json);
+
+            // Backend returns { workflow_id, result } — display just the result
+            const output = json.result ?? json;
+            alert(`Workflow complete!\n\n${JSON.stringify(output, null, 2)}`);
         } catch (err) {
             console.error('Failed to run workflow:', err);
             alert('Failed to connect to backend. Is it running on port 8000?');
+        } finally {
+            setIsRunning(false);
         }
     };
 
@@ -45,14 +52,18 @@ export const TopBar = () => {
         <div className="absolute bottom-10 left-8 z-50 flex gap-2">
             <button
                 onClick={handleRun}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded shadow-lg transition-colors font-semibold"
+                disabled={isRunning}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-700 disabled:cursor-not-allowed text-white rounded shadow-lg transition-colors font-semibold"
             >
-                <Play className="w-4 h-4" />
-                Run
+                {isRunning
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Running...</>
+                    : <><Play className="w-4 h-4" /> Run</>
+                }
             </button>
             <button
                 onClick={handleSave}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded shadow-lg transition-colors font-semibold"
+                disabled={isRunning}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded shadow-lg transition-colors font-semibold"
             >
                 <Save className="w-4 h-4" />
                 Save
