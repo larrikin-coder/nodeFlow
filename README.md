@@ -70,7 +70,7 @@ nodeFlow/
 
 - Node.js 18+
 - Python 3.11+
-- [Temporal CLI](https://docs.temporal.io/cli) (`brew install temporal` on macOS)
+- [Temporal CLI](https://docs.temporal.io/cli) (`docker run --rm -p 7233:7233 -p 8233:8233 temporalio/temporal server start-dev --ip 0.0.0.0` using Docker)
 
 ### 1. Start the Temporal Development Server
 
