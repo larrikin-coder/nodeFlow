@@ -8,9 +8,20 @@ export const ConfigPanel = () => {
     const { nodes, updateNodeData, deleteNode } = useStore();
     const [selectedNode, setSelectedNode] = useState<any>(null);
 
+    // Local string states for all JSON textarea fields
+    const [payloadText, setPayloadText] = useState('{}');
+    const [headersText, setHeadersText] = useState('{}');
+    const [bodyText, setBodyText] = useState('{}');
+
     useEffect(() => {
         const found = nodes.find((n) => n.selected);
         setSelectedNode(found || null);
+
+        if (found) {
+            setPayloadText(JSON.stringify(found.data.payload || {}, null, 2));
+            setHeadersText(JSON.stringify(found.data.headers || {}, null, 2));
+            setBodyText(JSON.stringify(found.data.body || {}, null, 2));
+        }
     }, [nodes]);
 
     if (!selectedNode) {
@@ -25,7 +36,10 @@ export const ConfigPanel = () => {
         <aside className="fixed right-0 top-0 bottom-0 w-80 bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 p-4 shadow-xl z-20 overflow-y-auto">
             <div className="flex justify-between items-center mb-4 border-b border-zinc-100 dark:border-zinc-800 pb-2">
                 <h3 className="font-bold text-lg dark:text-zinc-100">Configuration</h3>
-                <button onClick={() => setSelectedNode(null)} className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">
+                <button
+                    onClick={() => setSelectedNode(null)}
+                    className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                >
                     <X className="w-4 h-4" />
                 </button>
             </div>
@@ -33,31 +47,37 @@ export const ConfigPanel = () => {
             <div className="space-y-4">
                 <div className="flex flex-col gap-1">
                     <label className="text-xs font-bold text-zinc-500 uppercase">Node ID</label>
-                    <code className="text-xs bg-zinc-100 dark:bg-zinc-800 p-1 rounded font-mono">{selectedNode.id}</code>
+                    <code className="text-xs bg-zinc-100 dark:bg-zinc-800 p-1 rounded font-mono">
+                        {selectedNode.id}
+                    </code>
                 </div>
                 <div className="flex flex-col gap-1">
                     <label className="text-xs font-bold text-zinc-500 uppercase">Type</label>
                     <span className="text-sm dark:text-zinc-300">{selectedNode.type}</span>
                 </div>
 
-                {/* Dynamic fields based on node type */}
+                {/* Manual Trigger */}
                 {selectedNode.type === 'manualTrigger' && (
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-zinc-500 uppercase">Initial Payload (JSON)</label>
+                        <label className="text-xs font-bold text-zinc-500 uppercase">
+                            Initial Payload (JSON)
+                        </label>
                         <textarea
                             className="w-full h-32 p-2 text-xs font-mono border border-zinc-200 dark:border-zinc-700 rounded bg-zinc-50 dark:bg-zinc-950 dark:text-zinc-300"
-                            value={JSON.stringify(selectedNode.data.payload || {}, null, 2)}
+                            value={payloadText}
                             onChange={(e) => {
+                                setPayloadText(e.target.value);
                                 try {
                                     handleChange('payload', JSON.parse(e.target.value));
                                 } catch (err) {
-                                    // ignore invalid json while typing
+                                    // invalid JSON mid-type — don't propagate yet
                                 }
                             }}
                         />
                     </div>
                 )}
 
+                {/* HTTP Request */}
                 {selectedNode.type === 'httpRequest' && (
                     <>
                         <div className="flex flex-col gap-2">
@@ -84,30 +104,36 @@ export const ConfigPanel = () => {
                             />
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-zinc-500 uppercase">Headers (JSON)</label>
+                            <label className="text-xs font-bold text-zinc-500 uppercase">
+                                Headers (JSON)
+                            </label>
                             <textarea
                                 className="w-full h-24 p-2 text-xs font-mono border border-zinc-200 dark:border-zinc-700 rounded bg-zinc-50 dark:bg-zinc-950 dark:text-zinc-300"
-                                value={JSON.stringify(selectedNode.data.headers || {}, null, 2)}
+                                value={headersText}
                                 onChange={(e) => {
+                                    setHeadersText(e.target.value);
                                     try {
                                         handleChange('headers', JSON.parse(e.target.value));
                                     } catch (err) {
-                                        // ignore
+                                        // invalid JSON mid-type — don't propagate yet
                                     }
                                 }}
                             />
                         </div>
                         {selectedNode.data.method !== 'GET' && (
                             <div className="flex flex-col gap-2">
-                                <label className="text-xs font-bold text-zinc-500 uppercase">Body (JSON)</label>
+                                <label className="text-xs font-bold text-zinc-500 uppercase">
+                                    Body (JSON)
+                                </label>
                                 <textarea
                                     className="w-full h-24 p-2 text-xs font-mono border border-zinc-200 dark:border-zinc-700 rounded bg-zinc-50 dark:bg-zinc-950 dark:text-zinc-300"
-                                    value={JSON.stringify(selectedNode.data.body || {}, null, 2)}
+                                    value={bodyText}
                                     onChange={(e) => {
+                                        setBodyText(e.target.value);
                                         try {
                                             handleChange('body', JSON.parse(e.target.value));
                                         } catch (err) {
-                                            // ignore
+                                            // invalid JSON mid-type — don't propagate yet
                                         }
                                     }}
                                 />
@@ -116,6 +142,7 @@ export const ConfigPanel = () => {
                     </>
                 )}
 
+                {/* Transform Data */}
                 {selectedNode.type === 'transformData' && (
                     <>
                         <div className="flex flex-col gap-2">
@@ -132,7 +159,9 @@ export const ConfigPanel = () => {
                             </select>
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-zinc-500 uppercase">Target Field</label>
+                            <label className="text-xs font-bold text-zinc-500 uppercase">
+                                Target Field
+                            </label>
                             <input
                                 type="text"
                                 className="p-2 border border-zinc-200 dark:border-zinc-700 rounded bg-white dark:bg-zinc-950 dark:text-zinc-300"
@@ -142,7 +171,9 @@ export const ConfigPanel = () => {
                             />
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-zinc-500 uppercase">Parameter (Value)</label>
+                            <label className="text-xs font-bold text-zinc-500 uppercase">
+                                Parameter (Value)
+                            </label>
                             <input
                                 type="text"
                                 className="p-2 border border-zinc-200 dark:border-zinc-700 rounded bg-white dark:bg-zinc-950 dark:text-zinc-300"
@@ -154,10 +185,13 @@ export const ConfigPanel = () => {
                     </>
                 )}
 
+                {/* Decision */}
                 {selectedNode.type === 'decision' && (
                     <>
                         <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-zinc-500 uppercase">Field to Check</label>
+                            <label className="text-xs font-bold text-zinc-500 uppercase">
+                                Field to Check
+                            </label>
                             <input
                                 type="text"
                                 className="p-2 border border-zinc-200 dark:border-zinc-700 rounded bg-white dark:bg-zinc-950 dark:text-zinc-300"
@@ -182,7 +216,9 @@ export const ConfigPanel = () => {
                             </select>
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-zinc-500 uppercase">Comparison Value</label>
+                            <label className="text-xs font-bold text-zinc-500 uppercase">
+                                Comparison Value
+                            </label>
                             <input
                                 type="text"
                                 className="p-2 border border-zinc-200 dark:border-zinc-700 rounded bg-white dark:bg-zinc-950 dark:text-zinc-300"
@@ -194,9 +230,12 @@ export const ConfigPanel = () => {
                     </>
                 )}
 
+                {/* Wait */}
                 {selectedNode.type === 'wait' && (
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-zinc-500 uppercase">Duration (seconds)</label>
+                        <label className="text-xs font-bold text-zinc-500 uppercase">
+                            Duration (seconds)
+                        </label>
                         <input
                             type="number"
                             className="p-2 border border-zinc-200 dark:border-zinc-700 rounded bg-white dark:bg-zinc-950 dark:text-zinc-300"
