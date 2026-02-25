@@ -1,32 +1,43 @@
 "use client";
 
 import React from 'react';
-import { Play, Save, Upload } from 'lucide-react';
+import { Play, Save } from 'lucide-react';
 import { useStore } from '@/lib/store';
 
 export const TopBar = () => {
     const { nodes, edges } = useStore();
 
     const handleRun = async () => {
-        // Mock execution
-        console.log('Running workflow:', { nodes, edges });
-        alert('Workflow execution triggered! Check console for payload.');
-        // In real app, this would POST to backend
-        const response = await fetch('http://localhost:8000/api/workflows/run', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                workflow: { nodes, edges },
-                initial_payload: {}
-            })
-        });
-        console.log('Response from backend:', await response.json());
+        const triggerNode = nodes.find((n) => n.type === 'manualTrigger');
+        const initial_payload = triggerNode?.data?.payload || {};
+
+        const body = {
+            workflow: { nodes, edges },
+            initial_payload,
+        };
+
+        console.log('Running workflow:', body);
+
+        try {
+            const response = await fetch('http://localhost:8000/api/workflows/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+
+            const result = await response.json();
+            console.log('Response from backend:', result);
+            alert(`Workflow triggered!\nResult: ${JSON.stringify(result, null, 2)}`);
+        } catch (err) {
+            console.error('Failed to run workflow:', err);
+            alert('Failed to connect to backend. Is it running on port 8000?');
+        }
     };
 
     const handleSave = () => {
-        console.log('Saving workflow:', { nodes, edges });
         const data = JSON.stringify({ nodes, edges });
         localStorage.setItem('workflow-data', data);
+        console.log('Workflow saved:', { nodes, edges });
         alert('Workflow saved to local storage.');
     };
 
