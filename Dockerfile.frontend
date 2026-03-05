@@ -9,7 +9,9 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 # Copy package files and install deps (postinstall runs `prisma generate`)
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
+COPY prisma.config.ts ./
 RUN npm ci
+
 
 # Copy rest of source and build
 COPY . .
