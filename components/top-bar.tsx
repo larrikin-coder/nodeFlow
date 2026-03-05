@@ -21,7 +21,9 @@ export const TopBar = () => {
         setIsRunning(true);
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+            // Strip trailing slash if present to avoid `//api/...`
+            const rawUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+            const apiUrl = rawUrl.replace(/\/$/, '');
             const response = await fetch(`${apiUrl}/api/workflows/run`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
