@@ -1,0 +1,15 @@
+app = "nodeflow-worker"
+primary_region = "sin"
+
+[build]
+  dockerfile = "backend/Dockerfile.worker"
+
+# No [http_service] — this is a pure background worker process
+
+[env]
+  TEMPORAL_HOST      = "nodeflow-temporal.internal:7233"
+  TEMPORAL_NAMESPACE = "default"
+
+[[vm]]
+  size   = "shared-cpu-1x"
+  memory = "256mb"

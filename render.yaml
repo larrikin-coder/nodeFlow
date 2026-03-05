@@ -1,0 +1,68 @@
+services:
+  # ─────────────────────────────────────────────────────────
+  # FastAPI Backend (Web Service)
+  # ─────────────────────────────────────────────────────────
+  - type: web
+    name: nodeflow-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile.backend
+    dockerContext: ./backend
+    plan: free               # change to "starter" or higher for production
+    envVars:
+      - key: TEMPORAL_HOST
+        sync: false          # set manually in Render dashboard
+      - key: TEMPORAL_NAMESPACE
+        sync: false
+      - key: TEMPORAL_TLS_CERT_DATA
+        sync: false          # paste cert contents directly (not a file path)
+      - key: TEMPORAL_TLS_KEY_DATA
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false          # e.g. https://nodeflow-frontend.onrender.com
+    healthCheckPath: /health
+
+  # ─────────────────────────────────────────────────────────
+  # Temporal Worker (Background Worker — no public port)
+  # ─────────────────────────────────────────────────────────
+  - type: worker
+    name: nodeflow-worker
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile.worker
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: TEMPORAL_HOST
+        fromService:
+          name: nodeflow-backend
+          type: web
+          envVarKey: TEMPORAL_HOST
+      - key: TEMPORAL_NAMESPACE
+        fromService:
+          name: nodeflow-backend
+          type: web
+          envVarKey: TEMPORAL_NAMESPACE
+      - key: TEMPORAL_TLS_CERT_DATA
+        fromService:
+          name: nodeflow-backend
+          type: web
+          envVarKey: TEMPORAL_TLS_CERT_DATA
+      - key: TEMPORAL_TLS_KEY_DATA
+        fromService:
+          name: nodeflow-backend
+          type: web
+          envVarKey: TEMPORAL_TLS_KEY_DATA
+
+  # ─────────────────────────────────────────────────────────
+  # Next.js Frontend (Web Service)
+  # ─────────────────────────────────────────────────────────
+  - type: web
+    name: nodeflow-frontend
+    runtime: docker
+    dockerfilePath: ./Dockerfile.frontend
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        # This will be the Render URL of your backend service:
+        # e.g. https://nodeflow-backend.onrender.com
+        sync: false

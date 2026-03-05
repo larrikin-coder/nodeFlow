@@ -1,0 +1,7 @@
+[build]
+  builder = "dockerfile"
+  dockerfilePath = "Dockerfile.worker"
+
+[deploy]
+  # No healthcheck — worker is a background process with no HTTP
+  restartPolicyType = "on_failure"

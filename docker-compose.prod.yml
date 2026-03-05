@@ -1,0 +1,55 @@
+services:
+  # ─────────────────────────────────────────
+  # FastAPI backend
+  # ─────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      # For Temporal Cloud: "<namespace>.tmprl.cloud:7233"
+      # For self-hosted:    "temporal:7233"
+      - TEMPORAL_HOST=${TEMPORAL_HOST}
+      - TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE}
+      - TEMPORAL_TLS_CERT=${TEMPORAL_TLS_CERT}
+      - TEMPORAL_TLS_KEY=${TEMPORAL_TLS_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      retries: 3
+
+  # ─────────────────────────────────────────
+  # Temporal worker
+  # ─────────────────────────────────────────
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    environment:
+      - TEMPORAL_HOST=${TEMPORAL_HOST}
+      - TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE}
+      - TEMPORAL_TLS_CERT=${TEMPORAL_TLS_CERT}
+      - TEMPORAL_TLS_KEY=${TEMPORAL_TLS_KEY}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  # ─────────────────────────────────────────
+  # Next.js frontend
+  # ─────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # Set this to your backend's public URL (e.g. https://api.yourdomain.com)
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+    restart: unless-stopped
+    depends_on:
+      - backend

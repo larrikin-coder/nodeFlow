@@ -1,0 +1,22 @@
+app = "nodeflow-temporal"
+primary_region = "sin"   # must match backend + worker region
+
+# Use the official Temporal dev image — no custom Dockerfile needed
+[build]
+  image = "temporalio/temporal:latest"
+
+[processes]
+  app = "server start-dev --ip 0.0.0.0 --ui-ip 0.0.0.0"
+
+# Only expose port 7233 internally (backend/worker reach it via .internal DNS)
+# Port 8233 is the Web UI — only expose if you want it publicly
+[[services]]
+  internal_port = 7233
+  protocol      = "tcp"
+
+  [[services.ports]]
+    port = 7233
+
+[[vm]]
+  size   = "shared-cpu-1x"
+  memory = "256mb"

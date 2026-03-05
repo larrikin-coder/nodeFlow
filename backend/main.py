@@ -4,12 +4,19 @@ from temporalio.client import Client
 from models import RunWorkflowRequest
 from temporal_app.workflows import DAGWorkflow
 import uuid
+import os
 
 app = FastAPI()
 
+TEMPORAL_HOST = os.environ.get("TEMPORAL_HOST", "localhost:7233")
+TEMPORAL_NAMESPACE = os.environ.get("TEMPORAL_NAMESPACE", "default")
+
+_raw_origins = os.environ.get("ALLOWED_ORIGINS", "*")
+ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -18,10 +25,15 @@ app.add_middleware(
 temporal_client: Client | None = None
 
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
 @app.on_event("startup")
 async def startup_event():
     global temporal_client
-    temporal_client = await Client.connect("localhost:7233")
+    temporal_client = await Client.connect(TEMPORAL_HOST, namespace=TEMPORAL_NAMESPACE)
 
 
 @app.post("/api/workflows/run")
@@ -32,7 +44,6 @@ async def run_workflow(request: RunWorkflowRequest):
     workflow_id = f"workflow-{uuid.uuid4()}"
 
     try:
-        # execute_workflow starts the workflow AND waits for the result
         result = await temporal_client.execute_workflow(
             DAGWorkflow.run,
             {"workflow": request.workflow, "initial_payload": request.initial_payload},
