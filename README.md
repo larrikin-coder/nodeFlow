@@ -73,13 +73,11 @@ nodeFlow/
 - [Temporal CLI](https://docs.temporal.io/cli)
 - (`docker run --rm -p 7233:7233 -p 8233:8233 temporalio/temporal server start-dev --ip 0.0.0.0` using Docker)
 
-### 1. Start the Temporal Development Server
+### 1. Start the Temporal Server
 
 ```bash
 temporal server start-dev
 ```
-
-This starts a local Temporal server + UI at `http://localhost:8233`.
 
 ### 2. Start the FastAPI Backend + Temporal Worker
 
@@ -92,7 +90,7 @@ uvicorn main:app --reload --port 8000
 In a separate terminal:
 ```bash
 cd backend
-python worker.py
+python temporal_app/worker.py
 ```
 
 ### 3. Start the Next.js Frontend
@@ -106,32 +104,51 @@ Open `http://localhost:3000`
 
 ---
 
-## ⚠️ Why There Is No Live Demo
+## 🌍 Production Deployment Architecture
 
-NodeFlow is not currently deployed with a live link, and here's why.
+NodeFlow is fully deployed on **Railway** using Docker containers. 
 
-The frontend (Next.js) and backend (FastAPI) are relatively straightforward to deploy on platforms like Vercel and Railway. However, **Temporal is the bottleneck**.
+### Why Railway and not Vercel?
+NodeFlow includes a **Temporal Worker** — a Python process that runs 24/7 in the background, constantly polling the Temporal queue to physically execute workflow tasks. 
 
-Temporal requires a long-running, always-on **Worker process** — a Python process that polls Temporal's task queue and executes the actual workflow activities. This kind of persistent background process is not compatible with serverless deployment models (like Vercel Functions or similar), which are stateless and spin up/down on demand.
+Serverless platforms like Vercel (for Next.js) or standard AWS Lambda are designed to spin up on-demand and shut down instantly after an HTTP request finishes. They **cannot** run persistent background polling processes. 
 
-Hosting a Temporal Worker properly requires either:
-- A **dedicated cloud VM** (e.g., AWS EC2, GCP Compute Engine) — which costs money and requires manual setup
-- A **managed Temporal Cloud** account — which has its own cost and configuration overhead
-- **Docker + a container hosting service** (e.g., Railway, Render) that supports always-on workers
+To solve this, the entire stack was containerized into Docker images and deployed to Railway, which supports long-lived Docker containers native to the `docker-compose` topology:
 
-At this stage of the project, I haven't set up any of the above. The result is that while the frontend can be deployed and the FastAPI backend can be hosted, without the worker running, **no workflow will ever actually execute** — so a "live demo" would be functionally broken and misleading.
+| Service | Technology | Role |
+|---|---|---|
+| **Frontend** | Node.js (Alpine) | Serves the Next.js UI |
+| **Backend** | Python 3.11 | FastAPI server, handles API requests and triggers workflows |
+| **Worker** | Python 3.11 | Always-on background process executing Temporal activities |
+| **Temporal** | Go (Docker) | The orchestration engine queueing and managing workflow state |
 
-I'd rather be upfront about this than ship a half-working demo. The code is all here — if you clone it and run Temporal locally, everything works end-to-end.
+The services communicate over Railway's private internal network (`*.railway.internal`), ensuring the Temporal engine is never exposed to the public internet.
 
 ---
 
-## 🔮 What I'd Improve Next
+## 🔮 What I Could Have Done Better
 
-- **Persistent storage** — workflows are currently in-memory. Adding a database (PostgreSQL or SQLite) to save and load workflow definitions would make this genuinely useful.
-- **More node types** — right now the node library is limited. Adding HTTP request nodes, conditional branching, loops, and LLM-call nodes would make it much more powerful.
-- **Real-time execution feedback** — stream node execution status back to the canvas in real-time using WebSockets or SSE so users can watch their workflow run live.
-- **Proper deployment** — containerize the entire stack with Docker Compose (frontend, backend, worker, Temporal) and deploy it properly.
-- **Authentication** — add user accounts so people can save their own workflows.
+While the current architecture works end-to-end, there are several areas I would improve for a true production-grade system:
+
+### 1. Database Persistence
+Currently, workflows are saved using a local SQLite database (`dev.db`). In a containerized deployment on Railway, the local filesystem is ephemeral — meaning saved workflows are wiped out whenever the container restarts or redeploys. 
+- **The Fix:** Migrate Prisma to use a persistent managed PostgreSQL database instead of local SQLite.
+
+### 2. Temporal State Management
+The deployed Temporal instance runs in `--dev` mode, which stores all workflow execution history in memory. If the Temporal container restarts, the history of past executions is lost.
+- **The Fix:** Deploy a true Temporal Cluster backed by a persistent PostgreSQL database and Elasticsearch, or migrate it to Temporal Cloud.
+
+### 3. Real-time UI Updates
+When a workflow is executing, the frontend frequently polls the `/api/workflows/status/{id}` endpoint to check if the nodes have succeeded or failed.
+- **The Fix:** Replace HTTP polling with **WebSockets** or **Server-Sent Events (SSE)**. The Temporal worker could push state changes directly to the UI, making the canvas light up and animate in real-time as nodes execute.
+
+### 4. Expanded Node Ecosystem
+The current node palette is basic (API calls, data transforms, decision nodes). 
+- **The Fix:** Build a plugin architecture to easily add new nodes, such as LLM integrations (OpenAI/Anthropic), Database queries (SQL execution), or Slack/Discord webhooks.
+
+### 5. Frontend Bundle Optimization
+The `next.config.ts` was switched to `output: "standalone"` to support the Docker build, but the frontend image size is still substantial.
+- **The Fix:** Optimize the multi-stage Dockerfile further by utilizing `pnpm` for leaner dependency trees and aggressive caching.
 
 ---
 
