@@ -122,7 +122,11 @@ To solve this, the entire stack was containerized into Docker images and deploye
 | **Worker** | Python 3.11 | Always-on background process executing Temporal activities |
 | **Temporal** | Go (Docker) | The orchestration engine queueing and managing workflow state |
 
-The services communicate over Railway's private internal network (`*.railway.internal`), ensuring the Temporal engine is never exposed to the public internet.
+The services communicate over Railway's private internal network (`*.railway.internal`), ensuring the Temporal engine gRPC traffic is handled securely. 
+
+**👀 Live Workflow Dashboard:**
+The Temporal Web UI is exposed publicly so you can watch workflows execute in real-time. View it here: 
+👉 [https://temporal-production-bcc8.up.railway.app](https://temporal-production-bcc8.up.railway.app)
 
 ---
 
